@@ -1,0 +1,3 @@
+# Client side of both pipelines (the model itself runs in the vLLM runtime of common/cluster/).
+requests
+pymupdf

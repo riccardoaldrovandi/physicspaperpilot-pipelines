@@ -1,0 +1,9 @@
+# Evaluation, on any machine (a GPU makes BERTScore much faster).
+bert-score
+torch
+transformers
+scipy
+openpyxl
+# Only for make_tables.py --pdf
+markdown-it-py
+weasyprint

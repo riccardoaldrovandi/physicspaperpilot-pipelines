@@ -1,0 +1,27 @@
+{
+  "release": "v0.3.1",
+  "generative_llm_judge": false,
+  "api_calls": false,
+  "keypoint_matching": {
+    "method": "normalized_phrase_aliases_with_conservative_anchor_token_fallback",
+    "anchor_token_overlap_threshold": 0.85,
+    "minimum_informative_anchor_tokens": 3,
+    "score_name": "keypoint_coverage",
+    "interpretation": "recall_or_coverage_only; not precision, F1, or factuality"
+  },
+  "evidence_matching": {
+    "method": "section_heading_citation_matching_against_gold_evidence_groups; heading matches if normalized text, title without section number, or section number is equal",
+    "score_name": "evidence_section_f1",
+    "interpretation": "section-level source localization only; not paragraph-level evidence verification"
+  },
+  "optional_encoder_metric": {
+    "name": "BERTScore",
+    "default_model": "roberta-large",
+    "generative_judge": false,
+    "enabled_by_default": false
+  },
+  "aggregation": "mean_questions_within_paper_then_macro_mean_across_papers",
+  "composite_score": false,
+  "number_normalization": "unicode superscript exponents (10⁵, 10⁻⁶) converted to ^n before NFKC; sign of powers of ten kept as a word",
+  "changelog": "CHANGELOG_v0.3.1.md"
+}
