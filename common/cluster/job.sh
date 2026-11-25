@@ -3,7 +3,7 @@
 #   run_parallel <function>    <function> <config> <seed> for every CONFIGS x SEEDS, MAX_PARALLEL at a time
 #
 # Variables (sbatch --export=ALL,...): MODEL (required), SOURCE (pdf | latex), CONFIGS (think nothink;
-# mistral35: nothink only), SEEDS (0 1 2), MAX_PARALLEL (6), OUT_DIR (runs/<SOURCE>),
+# llama4scout: nothink only; mistral35 think only with MISTRAL35_EAGLE=1), SEEDS (0 1 2), MAX_PARALLEL (6), OUT_DIR (runs/<SOURCE>),
 # BENCHMARK_DIR, PDF_DIR, LATEX_DIR, LATEX_FIGURES_DIR, PIPELINE_VENV ($WORK/venv_vllm: needs
 # requests + pymupdf), ENERGY (1) and the overrides of models.sh.
 
@@ -24,7 +24,10 @@ export MAX_IMAGES="${MAX_IMAGES:-12}" SINGLE_CALL_MAX_IMAGES="${MAX_IMAGES:-12}"
 SOURCE_ARGS=(--source "$SOURCE" --pdf-dir "$PDF_DIR" --latex-dir "$LATEX_DIR" --figures-dir "$LATEX_FIGURES_DIR" --cache-dir "cache/$MODEL")
 
 job_setup() {
-    case " $CONFIGS " in *" think "*) [ "$MODEL" = mistral35 ] && { echo "[!] mistral35: CONFIGS=nothink only"; exit 1; } ;; esac
+    case " $CONFIGS " in *" think "*)
+        [ "$MODEL" = mistral35 ] && [ "${MISTRAL35_EAGLE:-0}" != 1 ] && { echo "[!] mistral35 think needs MISTRAL35_EAGLE=1"; exit 1; }
+        [ "$MODEL" = llama4scout ] && { echo "[!] llama4scout has no reasoning mode: CONFIGS=nothink"; exit 1; } ;;
+    esac
     [ -f "$BENCHMARK_DIR/01_questions_for_models/questions_public.csv" ] || { echo "[!] No benchmark package in '$BENCHMARK_DIR'"; exit 1; }
     if [ "$SOURCE" = pdf ]; then
         ls "$PDF_DIR"/*.pdf > /dev/null 2>&1 || { echo "[!] No PDF in '$PDF_DIR'"; exit 1; }

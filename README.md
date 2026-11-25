@@ -37,10 +37,23 @@ Outputs go to `runs/<pdf|latex>/`, `energy_logs/` and `logs/` (not tracked by gi
 | `qwen38` | Qwen3.8-27B | 0.19.1 | 2 (TP) | think, nothink |
 | `gemma4` | Gemma 4 31B | 0.19.1 | 4 (TP) | think, nothink |
 | `nemotron35` | Nemotron 3.5 Super VL 120B (FP8) | 0.32 | 4 (TP + EP) | think, nothink |
-| `mistral35` | Mistral Medium 3.5 128B (FP8) | 0.32 | 4 (TP) | nothink |
+| `mistral35` | Mistral Medium 3.5 128B (FP8) | 0.32 | 4 (TP) | nothink; think with `MISTRAL35_EAGLE=1` (to be validated) |
+| `llama4scout` | Llama 4 Scout 109B (FP8, RedHatAI) | 0.32 | 4 (TP) | nothink (to be validated) |
 
 All run with a 128k-token context, up to 32k output tokens and the sampling recommended by each
 model card (`common/cluster/models.sh`). Each config runs with seeds 0, 1 and 2.
+
+The A100 nodes have NVIDIA driver 535 (CUDA 12): vLLM 0.32 (`-cu129` image) is the newest release
+that runs there, since 0.33 and later ship CUDA 13 only. A new model is added to `models.sh` and
+checked with the smoke test before any benchmark job:
+
+```bash
+sbatch --export=ALL,MODEL=llama4scout,CONFIGS=nothink common/cluster/smoke_test.sbatch
+sbatch --export=ALL,MODEL=mistral35,MISTRAL35_EAGLE=1,CONFIGS="think nothink" common/cluster/smoke_test.sbatch
+```
+
+It checks text, image reading, guided JSON, reasoning and decoding speed on long answers, then runs
+one paper through Pipeline A and step B1.
 
 ## Running on Leonardo
 
@@ -50,7 +63,7 @@ Once, on a login node, from the repository root:
 bash common/cluster/setup_runtime.sh vllm019             # Qwen3.8, Gemma 4
 sbatch -p lrd_all_serial --time=02:00:00 --mem=30G -c 8 -o logs/setup_%j.out \
     --wrap "bash common/cluster/setup_runtime.sh vllm032"   # Nemotron 3.5, Mistral Medium 3.5
-MODEL=qwen38 bash common/cluster/download_model.sh       # once per model
+MODEL=qwen38 bash common/cluster/download_model.sh       # once per model (+ MISTRAL35_EAGLE=1 for mistral35 think)
 bash common/energy/setup_venv_energy.sh                  # energy monitor (optional)
 pip install -r requirements-pipelines.txt                # in the Python env of the jobs ($WORK/venv_vllm)
 python common/fetch_latex_sources.py                     # only for SOURCE=latex
