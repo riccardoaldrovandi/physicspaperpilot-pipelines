@@ -2,7 +2,7 @@
 
 Two ways for a language model to answer questions about physics papers, and the tools to compare
 them on the PhysicsPaperPilot benchmark (15 papers on fast calorimeter simulation, 45 questions with
-a private answer key).
+a private answer key - TBE).
 
 - **Pipeline A** — the model reads the paper (text and figures) and answers each question.
 - **Pipeline B** — the model first writes a structured JSON summary of the paper, then answers each
