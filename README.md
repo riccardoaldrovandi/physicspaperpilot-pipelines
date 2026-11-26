@@ -38,7 +38,9 @@ Outputs go to `runs/<pdf|latex>/`, `energy_logs/` and `logs/` (not tracked by gi
 | `gemma4` | Gemma 4 31B | 0.19.1 | 4 (TP) | think, nothink |
 | `nemotron35` | Nemotron 3.5 Super VL 120B (FP8) | 0.32 | 4 (TP + EP) | think, nothink |
 | `mistral35` | Mistral Medium 3.5 128B (FP8) | 0.32 | 4 (TP) | nothink; think with `MISTRAL35_EAGLE=1` (to be validated) |
-| `llama4scout` | Llama 4 Scout 109B (FP8, RedHatAI) | 0.32 | 4 (TP) | nothink (to be validated) |
+| `llama4scout` | Llama 4 Scout 109B (FP8, RedHatAI) | 0.32 | 4 (TP) | nothink |
+| `deepseekv4fv` | DeepSeek V4-Flash-Vision-Exp 305B | 0.32 | 4 (TP) | think, nothink (to be validated) |
+| `mimo26flash` | MiMo-V2.6-Flash-RL 309B (FP8) | 0.32 | 4 (TP) | think, nothink (to be validated) |
 
 All run with a 128k-token context, up to 32k output tokens and the sampling recommended by each
 model card (`common/cluster/models.sh`). Each config runs with seeds 0, 1 and 2.

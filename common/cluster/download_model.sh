@@ -3,6 +3,7 @@
 # resumable, just run it again. Gemma 4 and Llama 4 are gated: accept their license on Hugging Face
 # and `hf auth login` first.
 #   MODEL=qwen38 bash common/cluster/download_model.sh   # qwen38 | gemma4 | nemotron35 | mistral35 | llama4scout
+#                                                         # | deepseekv4fv | mimo26flash
 #   MODEL=mistral35 MISTRAL35_EAGLE=1 bash ...           # also the EAGLE draft model (for Mistral think)
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -24,6 +25,10 @@ case "$MODEL" in
                     "$HF_BIN" download mistralai/Mistral-Medium-3.5-128B-EAGLE --local-dir "$MISTRAL35_EAGLE_DIR"
                 fi ;;
     llama4scout) "$HF_BIN" download RedHatAI/Llama-4-Scout-17B-16E-Instruct-FP8-dynamic --local-dir "$MODEL_DIR"
+                 INDEX=model.safetensors.index.json ;;
+    deepseekv4fv) "$HF_BIN" download deepseek-ai/DeepSeek-V4-Flash-Vision-Exp --local-dir "$MODEL_DIR"
+                  INDEX=model.safetensors.index.json ;;
+    mimo26flash) "$HF_BIN" download XiaomiMiMo/MiMo-V2.6-Flash-RL --local-dir "$MODEL_DIR"
                  INDEX=model.safetensors.index.json ;;
 esac
 # Every shard of the index must be on disk, otherwise vLLM fails late, on the compute node.

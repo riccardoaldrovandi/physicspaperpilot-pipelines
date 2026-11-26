@@ -1,6 +1,6 @@
 # The models of the benchmark: vLLM server settings and pipeline sampling, the same for both
 # pipelines. Sourced from the repository root, with MODEL set
-# (qwen38 | gemma4 | nemotron35 | mistral35 | llama4scout):
+# (qwen38 | gemma4 | nemotron35 | mistral35 | llama4scout | deepseekv4fv | mimo26flash):
 #   source common/cluster/models.sh || exit 1
 #   model_start                 # vLLM server on the job's GPUs, 128k context (installs the stop trap)
 #   model_env think|nothink     # environment read by common/llm_client.py
@@ -18,6 +18,8 @@ NEMOTRON35_MODEL_DIR="${NEMOTRON35_MODEL_DIR:-$MODELS_DIR/nemotron-3.5-super-vl-
 MISTRAL35_MODEL_DIR="${MISTRAL35_MODEL_DIR:-$MODELS_DIR/mistral-medium-3.5-128b}"
 MISTRAL35_EAGLE_DIR="${MISTRAL35_EAGLE_DIR:-$MODELS_DIR/mistral-medium-3.5-128b-eagle}"
 LLAMA4SCOUT_MODEL_DIR="${LLAMA4SCOUT_MODEL_DIR:-$MODELS_DIR/llama-4-scout-17b-16e-fp8}"
+DEEPSEEKV4FV_MODEL_DIR="${DEEPSEEKV4FV_MODEL_DIR:-$MODELS_DIR/deepseek-v4-flash-vision}"
+MIMO26FLASH_MODEL_DIR="${MIMO26FLASH_MODEL_DIR:-$MODELS_DIR/mimo-v2.6-flash-rl}"
 MAX_CONTEXT=131072
 
 # Guided JSON (xgrammar) allows unlimited whitespace: Gemma 4 sometimes filled its whole budget with
@@ -31,7 +33,9 @@ case "$MODEL" in
     nemotron35) MODEL_DIR="$NEMOTRON35_MODEL_DIR"; RUNTIME=vllm032 ;;
     mistral35)  MODEL_DIR="$MISTRAL35_MODEL_DIR";  RUNTIME=vllm032 ;;
     llama4scout) MODEL_DIR="$LLAMA4SCOUT_MODEL_DIR"; RUNTIME=vllm032 ;;
-    *) echo "[!] Unknown MODEL '$MODEL' (qwen38 | gemma4 | nemotron35 | mistral35 | llama4scout)"; return 1 ;;
+    deepseekv4fv) MODEL_DIR="$DEEPSEEKV4FV_MODEL_DIR"; RUNTIME=vllm032 ;;
+    mimo26flash) MODEL_DIR="$MIMO26FLASH_MODEL_DIR"; RUNTIME=vllm032 ;;
+    *) echo "[!] Unknown MODEL '$MODEL' (qwen38 | gemma4 | nemotron35 | mistral35 | llama4scout | deepseekv4fv | mimo26flash)"; return 1 ;;
 esac
 
 # The `vllm serve` flags of each model (the model directory is also the served model name).
@@ -62,6 +66,15 @@ server_args() {
         # Llama 4 Scout (109B MoE, 17B active), FP8 dynamic (RedHatAI): FP8 runs as W8A16 on A100.
         llama4scout) echo "--tensor-parallel-size 4 --gpu-memory-utilization ${GPU_MEM_UTIL:-0.85} --max-num-seqs ${MAX_NUM_SEQS:-32}
                            --limit-mm-per-prompt $mm_image ${LLAMA4SCOUT_EXTRA_ARGS:-}" ;;
+        # DeepSeek V4-Flash-Vision-Exp (305B MoE, 13B active): flags of the model card. Its kernels
+        # target Hopper/Blackwell: whether it runs on A100 is what the smoke test checks.
+        deepseekv4fv) echo "--tensor-parallel-size 4 --gpu-memory-utilization ${GPU_MEM_UTIL:-0.85} --max-num-seqs ${MAX_NUM_SEQS:-32}
+                            --kv-cache-dtype fp8 --block-size 256 --reasoning-parser deepseek_v4
+                            --limit-mm-per-prompt $mm_image ${DEEPSEEKV4FV_EXTRA_ARGS:-}" ;;
+        # MiMo-V2.6-Flash-RL (309B MoE, 15B active), FP8: command of the model card.
+        mimo26flash) echo "--trust-remote-code --tensor-parallel-size 4 --gpu-memory-utilization ${GPU_MEM_UTIL:-0.85}
+                           --max-num-seqs ${MAX_NUM_SEQS:-32} --reasoning-parser mimo
+                           --limit-mm-per-prompt $mm_image ${MIMO26FLASH_EXTRA_ARGS:-}" ;;
     esac
 }
 
@@ -109,6 +122,12 @@ model_env() {
         mistral35:think)    export LOCAL_EXTRA_BODY='{"reasoning_effort": "high"}' LOCAL_TEMPERATURE=0.7 LOCAL_TOP_P=0.95 ;;
         # Llama 4 has no reasoning mode; sampling of its generation_config.json (checked by download_model.sh).
         llama4scout:nothink) export LOCAL_TEMPERATURE=0.6 LOCAL_TOP_P=0.9 ;;
+        # TO CHECK on the downloaded chat templates and generation_config.json: the reasoning switch
+        # (DeepSeek V3.1+ templates read `thinking`, MiMo `enable_thinking`) and the sampling.
+        deepseekv4fv:think)   export LOCAL_EXTRA_BODY='{"chat_template_kwargs": {"thinking": true}}' LOCAL_TEMPERATURE=1.0 LOCAL_TOP_P=0.95 ;;
+        deepseekv4fv:nothink) export LOCAL_EXTRA_BODY='{"chat_template_kwargs": {"thinking": false}}' LOCAL_TEMPERATURE=1.0 LOCAL_TOP_P=0.95 ;;
+        mimo26flash:think)    export LOCAL_ENABLE_THINKING=1 LOCAL_TEMPERATURE=1.0 LOCAL_TOP_P=0.95 ;;
+        mimo26flash:nothink)  export LOCAL_ENABLE_THINKING=0 LOCAL_TEMPERATURE=1.0 LOCAL_TOP_P=0.95 ;;
         *) echo "[!] Unknown config '$1' for $MODEL"; return 1 ;;
     esac
 }

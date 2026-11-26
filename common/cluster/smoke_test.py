@@ -4,7 +4,7 @@ With the server up and the environment of `model_env <config>` (common/cluster/m
   1. text        a one-word answer ("capital of France?"): broken FP8 kernels give garbage here
   2. image       a page of a benchmark paper is read (the answer names something on the page)
   3. json        guided decoding returns valid JSON for a small schema
-  4. reasoning   with LOCAL_ENABLE_THINKING=1 or reasoning_effort high, a reasoning field comes back
+  4. reasoning   with the config's reasoning switch on, a reasoning field comes back
   5. speed       a pipeline-like request (paper text, 8 images, the v2.1 schema, the config's sampling),
                  streamed: tokens per second per 250 tokens. Fails if decoding collapses as the answer
                  grows (last window below half the first, or below 5 tok/s), as Mistral think did.
@@ -76,7 +76,9 @@ def main():
     args = ap.parse_args()
     pdf = sorted(glob.glob(args.paper))[0]
     text, images = paper_inputs(pdf, "pdf", cache_dir="cache/smoke")
-    reasoning_on = llm.ENABLE_THINKING is True or llm.EXTRA_BODY.get("reasoning_effort") == "high"
+    template_kwargs = llm.EXTRA_BODY.get("chat_template_kwargs", {})
+    reasoning_on = (llm.ENABLE_THINKING is True or llm.EXTRA_BODY.get("reasoning_effort") == "high"
+                    or template_kwargs.get("thinking") is True or template_kwargs.get("enable_thinking") is True)
     report, ok = {"model": llm.MODEL_NAME, "settings": llm.GENERATION_SETTINGS}, True
 
     def check(name, fn):
