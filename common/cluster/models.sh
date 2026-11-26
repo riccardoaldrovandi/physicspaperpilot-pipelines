@@ -122,10 +122,13 @@ model_env() {
         mistral35:think)    export LOCAL_EXTRA_BODY='{"reasoning_effort": "high"}' LOCAL_TEMPERATURE=0.7 LOCAL_TOP_P=0.95 ;;
         # Llama 4 has no reasoning mode; sampling of its generation_config.json (checked by download_model.sh).
         llama4scout:nothink) export LOCAL_TEMPERATURE=0.6 LOCAL_TOP_P=0.9 ;;
-        # TO CHECK on the downloaded chat templates and generation_config.json: the reasoning switch
-        # (DeepSeek V3.1+ templates read `thinking`, MiMo `enable_thinking`) and the sampling.
-        deepseekv4fv:think)   export LOCAL_EXTRA_BODY='{"chat_template_kwargs": {"thinking": true}}' LOCAL_TEMPERATURE=1.0 LOCAL_TOP_P=0.95 ;;
+        # DeepSeek V4: no chat template, the encoding of the repo (encoding/) chooses the mode. Without
+        # reasoning_effort it answers in "chat" mode; the card's example turns thinking on with
+        # reasoning_effort ("max" in their evaluation; "high" here, as for Mistral). Sampling of the card.
+        deepseekv4fv:think)   export LOCAL_EXTRA_BODY='{"reasoning_effort": "high", "chat_template_kwargs": {"thinking": true}}' \
+                                     LOCAL_TEMPERATURE=1.0 LOCAL_TOP_P=0.95 ;;
         deepseekv4fv:nothink) export LOCAL_EXTRA_BODY='{"chat_template_kwargs": {"thinking": false}}' LOCAL_TEMPERATURE=1.0 LOCAL_TOP_P=0.95 ;;
+        # MiMo: the chat template reads enable_thinking; sampling of generation_config.json.
         mimo26flash:think)    export LOCAL_ENABLE_THINKING=1 LOCAL_TEMPERATURE=1.0 LOCAL_TOP_P=0.95 ;;
         mimo26flash:nothink)  export LOCAL_ENABLE_THINKING=0 LOCAL_TEMPERATURE=1.0 LOCAL_TOP_P=0.95 ;;
         *) echo "[!] Unknown config '$1' for $MODEL"; return 1 ;;
